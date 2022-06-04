@@ -1,0 +1,90 @@
+Description: >
+    Kevin Nyota / OnPrem Network
+    This template deploys a on-prem cloud network on AWS
+
+Parameters:
+    EnvironmentName:
+        Description: An environment name to be prefixed to resouce names
+        Type: String
+
+    VpcCIDR:
+        Description: Please enter the IP range (CIDR notation) for this VPC
+        Type: String
+        Default: 10.0.0.0/16  
+
+    PrivateSubnet1CIDR:
+        Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+        Type: String
+        Default: 10.0.2.0/24
+
+    PrivateSubnet2CIDR:
+        Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+        Type: String
+        Default: 10.0.3.0/24   
+
+    CustomerGatewayBgpAsn:
+        Description: For devices that support BGP, the customer gateway's BGP ASN
+        Type: String
+        Default: 65000
+
+    CustomerGatewayIpAddress:
+        Description: >
+            The Internet-routable IP address for the customer gateway's outside interface. 
+            The address must be static.
+        Type: String
+
+Resources:
+    VPC: 
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: !Ref VpcCIDR
+            EnableDnsHostnames: true
+            Tags: 
+                - Key: Name 
+                  Value: !Ref EnvironmentName
+
+    CustomerGateway:
+        Type: AWS::EC2::CustomerGateway
+        Properties:
+            BgpAsn: !Ref CustomerGatewayBgpAsn
+            IpAddress: !Ref CustomerGatewayIpAddress
+            Tags: 
+                - Key: Name
+                  Value: !Ref EnvironmentName
+            Type: ipsec.1
+
+    VirtualPrivateGateway:
+        Type: AWS::EC2::VPNGateway
+        Properties:
+            Type: ipsec.1
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvironmentName
+
+    VirtualPrivateGatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            VpnGatewayId: !Ref VirtualPrivateGateway
+            VpcId: !Ref VPC
+
+    PrivateSubnet1: 
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PrivateSubnet1CIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+
+    PrivateSubnet2: 
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 1, !GetAZs '' ]
+            CidrBlock: !Ref PrivateSubnet2CIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
