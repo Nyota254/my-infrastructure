@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterKey": "DBUsername",
+        "ParameterValue": "Udacity"
+    },
+    {
+        "ParameterKey": "DBPassword",
+        "ParameterValue": "kwerty321"
+    }
+]
